@@ -39,6 +39,8 @@
 
 # debug information files
 *.dwo
+
 # Code::Blocks
 *.layout
 *.depend
+*.cbp
