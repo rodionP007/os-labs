@@ -18,20 +18,18 @@ struct aio_operation {
     struct aiocb aio;
     char *buffer;
     int write_operation;      // 0 = read, 1 = write
-    void* next_operation;     // ���������� ��� ��������� �� "��������"
+    void* next_operation;
 };
 
-/* �������� (����� ������ ��� � next_operation, ����� ��������������� ��������� �� ���������) */
 struct op_ctx {
     off_t offset;
     size_t buf_size;
     ssize_t last_read;
-    int active;   // 1 ���� �������� � ������
-    int done;     // 1 ���� ���� �������� ������
-    volatile sig_atomic_t completed; // ������ � completion handler
+    int active;   // 1
+    int done;     // 1
+    volatile sig_atomic_t completed;
 };
 
-/* ���������� ��������� ����������� */
 static int g_fd_in = -1;
 static int g_fd_out = -1;
 static off_t g_file_size = 0;
@@ -58,12 +56,9 @@ static size_t fs_block_size_for_path(const char *path) {
     return 4096;
 }
 
-/* ������� ���������� (��� � ����������) */
 void aio_completion_handler(sigval_t sigval) {
     struct aio_operation *op = (struct aio_operation *)sigval.sival_ptr;
     struct op_ctx *ctx = (struct op_ctx*)op->next_operation;
-    /* ������ �� ������� �����, ������ �������� ����������.
-       �������� ������ ������ � main ����� aio_suspend + aio_return. */
     ctx->completed = 1;
 }
 
@@ -71,7 +66,6 @@ static void prepare_common_aiocb(struct aio_operation *op) {
     memset(&op->aio, 0, sizeof(op->aio));
     op->aio.aio_buf = op->buffer;
 
-    /* completion callback */
     op->aio.aio_sigevent.sigev_notify = SIGEV_THREAD;
     op->aio.aio_sigevent.sigev_notify_function = aio_completion_handler;
     op->aio.aio_sigevent.sigev_notify_attributes = NULL;
@@ -133,20 +127,16 @@ int main(int argc, char **argv) {
         fprintf(stderr, "block_size must be > 0\n");
         return 2;
     }
-
-    /* open ��� � ���������� */
     g_fd_in = open(src, O_RDONLY | O_NONBLOCK, 0666);
     if (g_fd_in < 0) die("open(read_filename)");
 
     g_fd_out = open(dst, O_CREAT | O_WRONLY | O_TRUNC | O_NONBLOCK, 0666);
     if (g_fd_out < 0) die("open(write_filename)");
 
-    /* fstat ��� � ���������� */
     struct stat st;
     if (fstat(g_fd_in, &st) != 0) die("fstat");
     g_file_size = st.st_size;
 
-    /* ��������� ���������/����� � �������� ���� �� � ��������� ������ */
     size_t fs_block = fs_block_size_for_path(dst);
     if (g_block_size % fs_block != 0) {
         fprintf(stderr,
@@ -161,7 +151,6 @@ int main(int argc, char **argv) {
     struct op_ctx *ctxs = (op_ctx*)calloc((size_t)g_n_ops, sizeof(*ctxs));
     if (!ops || !ctxs) die("calloc");
 
-    /* ����������� ������ (�� ������ ������: ��� ������ ��� ���������� ���������/�����) */
     size_t align = fs_block;
     if (align < 4096) align = 4096;
 
@@ -189,7 +178,6 @@ int main(int argc, char **argv) {
 
     uint64_t t0 = now_ns();
 
-    /* �������� n ������ */
     int done_slots = 0;
     for (int i = 0; i < g_n_ops; i++) {
         if (ctxs[i].offset >= g_file_size) {
@@ -199,8 +187,6 @@ int main(int argc, char **argv) {
         }
         submit_read(&ops[i]);
     }
-
-    /* ������� ���� ��������: ������ aio_suspend */
     while (done_slots < g_n_ops) {
         const struct aiocb *list[1024];
         int cnt = 0;
@@ -215,7 +201,6 @@ int main(int argc, char **argv) {
             die("aio_suspend");
         }
 
-        /* ������������ ������������� �������� ����� aio_return */
         for (int i = 0; i < g_n_ops; i++) {
             if (!ctxs[i].active) continue;
 
@@ -229,7 +214,7 @@ int main(int argc, char **argv) {
             ctxs[i].active = 0;
 
             if (ops[i].write_operation) {
-                /* ����������� ������ */
+
                 g_total_written += ret;
 
                 ctxs[i].offset += (off_t)g_n_ops * (off_t)g_block_size;
@@ -240,7 +225,6 @@ int main(int argc, char **argv) {
                 }
                 submit_read(&ops[i]);
             } else {
-                /* ����������� ������ */
                 if (ret == 0) {
                     ctxs[i].done = 1;
                     done_slots++;
@@ -252,7 +236,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* ��������� ������ ��������� ����� */
     if (ftruncate(g_fd_out, g_file_size) != 0) perror("ftruncate (warning)");
 
     uint64_t t1 = now_ns();
