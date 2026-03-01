@@ -1,8 +1,0 @@
-# depslib dependency file v1.0
-1771092598 source:c:\users\admin\onedrive\Рабочий стол\Алгоритмы\lab1_os\main.cpp
-	<windows.h>
-	<iostream>
-	<string>
-	<vector>
-	<iomanip>
-
