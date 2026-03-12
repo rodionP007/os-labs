@@ -1,7 +1,5 @@
 // lab2_1_virtual_memory.cpp
-// Win32 console app: virtual memory исследование (GetSystemInfo, GlobalMemoryStatusEx, VirtualQuery,
-// VirtualAlloc/VirtualFree (reserve/commit), запись по адресу, VirtualProtect).
-// Build (MSVC): cl /EHsc /W4 lab2_1_virtual_memory.cpp
+
 
 #define NOMINMAX
 #include <windows.h>
@@ -22,34 +20,34 @@ static void clearScreen() {
 
 const char* stateToRu(DWORD state) {
     switch (state) {
-        case MEM_COMMIT:  return "Выделено (MEM_COMMIT)";
-        case MEM_RESERVE: return "Зарезервировано (MEM_RESERVE)";
-        case MEM_FREE:    return "Свободно (MEM_FREE)";
-        default:          return "Неизвестно";
+        case MEM_COMMIT:  return "Р’С‹РґРµР»РµРЅРѕ (MEM_COMMIT)";
+        case MEM_RESERVE: return "Р—Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРѕ (MEM_RESERVE)";
+        case MEM_FREE:    return "РЎРІРѕР±РѕРґРЅРѕ (MEM_FREE)";
+        default:          return "РќРµРёР·РІРµСЃС‚РЅРѕ";
     }
 }
 
 const char* typeToRu(DWORD type) {
     switch (type) {
-        case MEM_PRIVATE: return "Частная память процесса (MEM_PRIVATE)";
-        case MEM_MAPPED:  return "Отображаемая память (MEM_MAPPED)";
-        case MEM_IMAGE:   return "Образ модуля (MEM_IMAGE)";
-        default:          return "Неизвестно";
+        case MEM_PRIVATE: return "Р§Р°СЃС‚РЅР°СЏ РїР°РјСЏС‚СЊ РїСЂРѕС†РµСЃСЃР° (MEM_PRIVATE)";
+        case MEM_MAPPED:  return "РћС‚РѕР±СЂР°Р¶Р°РµРјР°СЏ РїР°РјСЏС‚СЊ (MEM_MAPPED)";
+        case MEM_IMAGE:   return "РћР±СЂР°Р· РјРѕРґСѓР»СЏ (MEM_IMAGE)";
+        default:          return "РќРµРёР·РІРµСЃС‚РЅРѕ";
     }
 }
 
 const char* protectToRu(DWORD protect) {
     switch (protect) {
-        case 0:                       return "Не задана";
-        case PAGE_NOACCESS:           return "Нет доступа (PAGE_NOACCESS)";
-        case PAGE_READONLY:           return "Только чтение (PAGE_READONLY)";
-        case PAGE_READWRITE:          return "Чтение/запись (PAGE_READWRITE)";
-        case PAGE_WRITECOPY:          return "Копирование при записи (PAGE_WRITECOPY)";
-        case PAGE_EXECUTE:            return "Выполнение (PAGE_EXECUTE)";
-        case PAGE_EXECUTE_READ:       return "Выполнение/чтение (PAGE_EXECUTE_READ)";
-        case PAGE_EXECUTE_READWRITE:  return "Выполнение/чтение/запись (PAGE_EXECUTE_READWRITE)";
-        case PAGE_EXECUTE_WRITECOPY:  return "Выполнение/копирование при записи (PAGE_EXECUTE_WRITECOPY)";
-        default:                      return "Другая защита";
+        case 0:                       return "РќРµ Р·Р°РґР°РЅР°";
+        case PAGE_NOACCESS:           return "РќРµС‚ РґРѕСЃС‚СѓРїР° (PAGE_NOACCESS)";
+        case PAGE_READONLY:           return "РўРѕР»СЊРєРѕ С‡С‚РµРЅРёРµ (PAGE_READONLY)";
+        case PAGE_READWRITE:          return "Р§С‚РµРЅРёРµ/Р·Р°РїРёСЃСЊ (PAGE_READWRITE)";
+        case PAGE_WRITECOPY:          return "РљРѕРїРёСЂРѕРІР°РЅРёРµ РїСЂРё Р·Р°РїРёСЃРё (PAGE_WRITECOPY)";
+        case PAGE_EXECUTE:            return "Р’С‹РїРѕР»РЅРµРЅРёРµ (PAGE_EXECUTE)";
+        case PAGE_EXECUTE_READ:       return "Р’С‹РїРѕР»РЅРµРЅРёРµ/С‡С‚РµРЅРёРµ (PAGE_EXECUTE_READ)";
+        case PAGE_EXECUTE_READWRITE:  return "Р’С‹РїРѕР»РЅРµРЅРёРµ/С‡С‚РµРЅРёРµ/Р·Р°РїРёСЃСЊ (PAGE_EXECUTE_READWRITE)";
+        case PAGE_EXECUTE_WRITECOPY:  return "Р’С‹РїРѕР»РЅРµРЅРёРµ/РєРѕРїРёСЂРѕРІР°РЅРёРµ РїСЂРё Р·Р°РїРёСЃРё (PAGE_EXECUTE_WRITECOPY)";
+        default:                      return "Р”СЂСѓРіР°СЏ Р·Р°С‰РёС‚Р°";
     }
 }
 
@@ -58,7 +56,7 @@ const char* archToRu(WORD arch) {
         case PROCESSOR_ARCHITECTURE_INTEL: return "x86";
         case PROCESSOR_ARCHITECTURE_AMD64: return "x64 (AMD64)";
         case PROCESSOR_ARCHITECTURE_ARM:   return "ARM";
-        default:                           return "Неизвестно";
+        default:                           return "РќРµРёР·РІРµСЃС‚РЅРѕ";
     }
 }
 
@@ -78,13 +76,13 @@ static std::string readLine(const std::string& prompt) {
 }
 
 static void pauseEnter() {
-    std::cout << "\nНажмите Enter...";
+    std::cout << "\nРќР°Р¶РјРёС‚Рµ Enter...";
     std::string tmp;
     std::getline(std::cin, tmp);
 }
 
 static bool parseSize(const std::string& s, SIZE_T& out) {
-    // поддержка: 123, 123K, 123M, 123G (K/M/G = 1024^n)
+    // РїРѕРґРґРµСЂР¶РєР°: 123, 123K, 123M, 123G (K/M/G = 1024^n)
     std::string t;
     for (char c : s) if (!std::isspace((unsigned char)c)) t.push_back(c);
     if (t.empty()) return false;
@@ -113,7 +111,7 @@ static bool parseSize(const std::string& s, SIZE_T& out) {
 }
 
 static bool parsePtr(const std::string& s, void*& out) {
-    // принимает: 0x..., либо просто hex/dec
+    // РїСЂРёРЅРёРјР°РµС‚: 0x..., Р»РёР±Рѕ РїСЂРѕСЃС‚Рѕ hex/dec
     std::string t;
     for (char c : s) if (!std::isspace((unsigned char)c)) t.push_back(c);
     if (t.empty()) return false;
@@ -124,7 +122,7 @@ static bool parsePtr(const std::string& s, void*& out) {
         int base = 10;
         if (t.size() > 2 && t[0] == '0' && (t[1] == 'x' || t[1] == 'X')) base = 16;
         else {
-            // если есть буквы A-F -> hex
+            // РµСЃР»Рё РµСЃС‚СЊ Р±СѓРєРІС‹ A-F -> hex
             for (char c : t) {
                 if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) { base = 16; break; }
             }
@@ -138,18 +136,18 @@ static bool parsePtr(const std::string& s, void*& out) {
 }
 
 static DWORD parseProtectChoice() {
-    std::cout << "\nВыберите защиту:\n"
-              << "  1) PAGE_NOACCESS               - доступ запрещен\n"
-              << "  2) PAGE_READONLY               - только чтение\n"
-              << "  3) PAGE_READWRITE              - чтение и запись\n"
-              << "  4) PAGE_WRITECOPY              - копирование при записи\n"
-              << "  5) PAGE_EXECUTE                - только выполнение\n"
-              << "  6) PAGE_EXECUTE_READ           - выполнение и чтение\n"
-              << "  7) PAGE_EXECUTE_READWRITE      - выполнение, чтение и запись\n"
-              << "  8) PAGE_EXECUTE_WRITECOPY      - выполнение и копирование при записи\n"
-              << "  9) PAGE_READWRITE | PAGE_GUARD - чтение/запись + сторожевая страница\n"
-              << " 10) PAGE_READONLY  | PAGE_GUARD - только чтение + сторожевая страница\n";
-    std::string s = readLine("Введите номер: ");
+    std::cout << "\nР’С‹Р±РµСЂРёС‚Рµ Р·Р°С‰РёС‚Сѓ:\n"
+              << "  1) PAGE_NOACCESS               - РґРѕСЃС‚СѓРї Р·Р°РїСЂРµС‰РµРЅ\n"
+              << "  2) PAGE_READONLY               - С‚РѕР»СЊРєРѕ С‡С‚РµРЅРёРµ\n"
+              << "  3) PAGE_READWRITE              - С‡С‚РµРЅРёРµ Рё Р·Р°РїРёСЃСЊ\n"
+              << "  4) PAGE_WRITECOPY              - РєРѕРїРёСЂРѕРІР°РЅРёРµ РїСЂРё Р·Р°РїРёСЃРё\n"
+              << "  5) PAGE_EXECUTE                - С‚РѕР»СЊРєРѕ РІС‹РїРѕР»РЅРµРЅРёРµ\n"
+              << "  6) PAGE_EXECUTE_READ           - РІС‹РїРѕР»РЅРµРЅРёРµ Рё С‡С‚РµРЅРёРµ\n"
+              << "  7) PAGE_EXECUTE_READWRITE      - РІС‹РїРѕР»РЅРµРЅРёРµ, С‡С‚РµРЅРёРµ Рё Р·Р°РїРёСЃСЊ\n"
+              << "  8) PAGE_EXECUTE_WRITECOPY      - РІС‹РїРѕР»РЅРµРЅРёРµ Рё РєРѕРїРёСЂРѕРІР°РЅРёРµ РїСЂРё Р·Р°РїРёСЃРё\n"
+              << "  9) PAGE_READWRITE | PAGE_GUARD - С‡С‚РµРЅРёРµ/Р·Р°РїРёСЃСЊ + СЃС‚РѕСЂРѕР¶РµРІР°СЏ СЃС‚СЂР°РЅРёС†Р°\n"
+              << " 10) PAGE_READONLY  | PAGE_GUARD - С‚РѕР»СЊРєРѕ С‡С‚РµРЅРёРµ + СЃС‚РѕСЂРѕР¶РµРІР°СЏ СЃС‚СЂР°РЅРёС†Р°\n";
+    std::string s = readLine("Р’РІРµРґРёС‚Рµ РЅРѕРјРµСЂ: ");
     int n = 0;
     try { n = std::stoi(s); } catch (...) { return 0; }
 
@@ -175,13 +173,13 @@ static void printLastError(const char* where) {
     DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
     FormatMessageA(flags, nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, nullptr);
 
-    std::cerr << "\n[ОШИБКА] " << where << " -> code=" << err;
+    std::cerr << "\n[РћРЁРР‘РљРђ] " << where << " -> code=" << err;
     if (msg) std::cerr << " (" << msg << ")";
     std::cerr << "\n";
     if (msg) LocalFree(msg);
 }
 static std::string protectToStr(DWORD p) {
-    if (p == 0) return "Не задана";
+    if (p == 0) return "РќРµ Р·Р°РґР°РЅР°";
 
     struct Item {
         DWORD bit;
@@ -190,20 +188,20 @@ static std::string protectToStr(DWORD p) {
     };
 
     static const Item base[] = {
-        { PAGE_NOACCESS,          "PAGE_NOACCESS",          "доступ запрещен" },
-        { PAGE_READONLY,          "PAGE_READONLY",          "только чтение" },
-        { PAGE_READWRITE,         "PAGE_READWRITE",         "чтение и запись" },
-        { PAGE_WRITECOPY,         "PAGE_WRITECOPY",         "копирование при записи" },
-        { PAGE_EXECUTE,           "PAGE_EXECUTE",           "только выполнение" },
-        { PAGE_EXECUTE_READ,      "PAGE_EXECUTE_READ",      "выполнение и чтение" },
-        { PAGE_EXECUTE_READWRITE, "PAGE_EXECUTE_READWRITE", "выполнение, чтение и запись" },
-        { PAGE_EXECUTE_WRITECOPY, "PAGE_EXECUTE_WRITECOPY", "выполнение и копирование при записи" },
+        { PAGE_NOACCESS,          "PAGE_NOACCESS",          "РґРѕСЃС‚СѓРї Р·Р°РїСЂРµС‰РµРЅ" },
+        { PAGE_READONLY,          "PAGE_READONLY",          "С‚РѕР»СЊРєРѕ С‡С‚РµРЅРёРµ" },
+        { PAGE_READWRITE,         "PAGE_READWRITE",         "С‡С‚РµРЅРёРµ Рё Р·Р°РїРёСЃСЊ" },
+        { PAGE_WRITECOPY,         "PAGE_WRITECOPY",         "РєРѕРїРёСЂРѕРІР°РЅРёРµ РїСЂРё Р·Р°РїРёСЃРё" },
+        { PAGE_EXECUTE,           "PAGE_EXECUTE",           "С‚РѕР»СЊРєРѕ РІС‹РїРѕР»РЅРµРЅРёРµ" },
+        { PAGE_EXECUTE_READ,      "PAGE_EXECUTE_READ",      "РІС‹РїРѕР»РЅРµРЅРёРµ Рё С‡С‚РµРЅРёРµ" },
+        { PAGE_EXECUTE_READWRITE, "PAGE_EXECUTE_READWRITE", "РІС‹РїРѕР»РЅРµРЅРёРµ, С‡С‚РµРЅРёРµ Рё Р·Р°РїРёСЃСЊ" },
+        { PAGE_EXECUTE_WRITECOPY, "PAGE_EXECUTE_WRITECOPY", "РІС‹РїРѕР»РЅРµРЅРёРµ Рё РєРѕРїРёСЂРѕРІР°РЅРёРµ РїСЂРё Р·Р°РїРёСЃРё" },
     };
 
     static const Item mods[] = {
-        { PAGE_GUARD,        "PAGE_GUARD",        "сторожевая страница" },
-        { PAGE_NOCACHE,      "PAGE_NOCACHE",      "без кэширования" },
-        { PAGE_WRITECOMBINE, "PAGE_WRITECOMBINE", "объединение операций записи" },
+        { PAGE_GUARD,        "PAGE_GUARD",        "СЃС‚РѕСЂРѕР¶РµРІР°СЏ СЃС‚СЂР°РЅРёС†Р°" },
+        { PAGE_NOCACHE,      "PAGE_NOCACHE",      "Р±РµР· РєСЌС€РёСЂРѕРІР°РЅРёСЏ" },
+        { PAGE_WRITECOMBINE, "PAGE_WRITECOMBINE", "РѕР±СЉРµРґРёРЅРµРЅРёРµ РѕРїРµСЂР°С†РёР№ Р·Р°РїРёСЃРё" },
     };
 
     std::ostringstream oss;
@@ -220,7 +218,7 @@ static std::string protectToStr(DWORD p) {
     }
 
     if (!foundBase) {
-        oss << "0x" << std::hex << std::uppercase << p << " (неизвестная защита)";
+        oss << "0x" << std::hex << std::uppercase << p << " (РЅРµРёР·РІРµСЃС‚РЅР°СЏ Р·Р°С‰РёС‚Р°)";
         first = false;
     }
 
@@ -246,14 +244,14 @@ static void menuSystemInfo() {
     GetSystemInfo(&si);
 
     std::cout << "\n--- GetSystemInfo ---\n";
-    std::cout << "Архитектура процессора: "
+    std::cout << "РђСЂС…РёС‚РµРєС‚СѓСЂР° РїСЂРѕС†РµСЃСЃРѕСЂР°: "
           << archToRu(si.wProcessorArchitecture)
           << " (" << si.wProcessorArchitecture << ")\n";
-    std::cout << "Размер страницы (dwPageSize): " << si.dwPageSize << " bytes\n";
-    std::cout << "Гранулярность выделения (dwAllocationGranularity): " << si.dwAllocationGranularity << " bytes\n";
-    std::cout << "Мин. адрес приложения: " << si.lpMinimumApplicationAddress << "\n";
-    std::cout << "Макс. адрес приложения: " << si.lpMaximumApplicationAddress << "\n";
-    std::cout << "Число процессоров: " << si.dwNumberOfProcessors << "\n";
+    std::cout << "Р Р°Р·РјРµСЂ СЃС‚СЂР°РЅРёС†С‹ (dwPageSize): " << si.dwPageSize << " bytes\n";
+    std::cout << "Р“СЂР°РЅСѓР»СЏСЂРЅРѕСЃС‚СЊ РІС‹РґРµР»РµРЅРёСЏ (dwAllocationGranularity): " << si.dwAllocationGranularity << " bytes\n";
+    std::cout << "РњРёРЅ. Р°РґСЂРµСЃ РїСЂРёР»РѕР¶РµРЅРёСЏ: " << si.lpMinimumApplicationAddress << "\n";
+    std::cout << "РњР°РєСЃ. Р°РґСЂРµСЃ РїСЂРёР»РѕР¶РµРЅРёСЏ: " << si.lpMaximumApplicationAddress << "\n";
+    std::cout << "Р§РёСЃР»Рѕ РїСЂРѕС†РµСЃСЃРѕСЂРѕРІ: " << si.dwNumberOfProcessors << "\n";
 
     pauseEnter();
 }
@@ -271,13 +269,13 @@ static void menuMemoryStatus() {
     auto mib = [](DWORDLONG b) { return (double)b / (1024.0 * 1024.0); };
 
     std::cout << "\n--- GlobalMemoryStatusEx ---\n";
-    std::cout << "Загрузка памяти: " << st.dwMemoryLoad << " %\n";
-    std::cout << "Общий объем физической памяти:  " << mib(st.ullTotalPhys) << " MiB\n";
-    std::cout << "Доступный объем физической памяти:  " << mib(st.ullAvailPhys) << " MiB\n";
-    std::cout << "Общий объем файла подкачки: " << mib(st.ullTotalPageFile) << " MiB\n";
-    std::cout << "Доступный объем файла подкачки: " << mib(st.ullAvailPageFile) << " MiB\n";
-    std::cout << "Общий объем виртуальной памяти процесса:  " << mib(st.ullTotalVirtual) << " MiB\n";
-    std::cout << "Доступный объем виртуальной памяти процесса:  " << mib(st.ullAvailVirtual) << " MiB\n";
+    std::cout << "Р—Р°РіСЂСѓР·РєР° РїР°РјСЏС‚Рё: " << st.dwMemoryLoad << " %\n";
+    std::cout << "РћР±С‰РёР№ РѕР±СЉРµРј С„РёР·РёС‡РµСЃРєРѕР№ РїР°РјСЏС‚Рё:  " << mib(st.ullTotalPhys) << " MiB\n";
+    std::cout << "Р”РѕСЃС‚СѓРїРЅС‹Р№ РѕР±СЉРµРј С„РёР·РёС‡РµСЃРєРѕР№ РїР°РјСЏС‚Рё:  " << mib(st.ullAvailPhys) << " MiB\n";
+    std::cout << "РћР±С‰РёР№ РѕР±СЉРµРј С„Р°Р№Р»Р° РїРѕРґРєР°С‡РєРё: " << mib(st.ullTotalPageFile) << " MiB\n";
+    std::cout << "Р”РѕСЃС‚СѓРїРЅС‹Р№ РѕР±СЉРµРј С„Р°Р№Р»Р° РїРѕРґРєР°С‡РєРё: " << mib(st.ullAvailPageFile) << " MiB\n";
+    std::cout << "РћР±С‰РёР№ РѕР±СЉРµРј РІРёСЂС‚СѓР°Р»СЊРЅРѕР№ РїР°РјСЏС‚Рё РїСЂРѕС†РµСЃСЃР°:  " << mib(st.ullTotalVirtual) << " MiB\n";
+    std::cout << "Р”РѕСЃС‚СѓРїРЅС‹Р№ РѕР±СЉРµРј РІРёСЂС‚СѓР°Р»СЊРЅРѕР№ РїР°РјСЏС‚Рё РїСЂРѕС†РµСЃСЃР°:  " << mib(st.ullAvailVirtual) << " MiB\n";
 
     pauseEnter();
 }
@@ -291,29 +289,29 @@ static void printVirtualQuery(void* addr) {
     }
 
     std::cout << "\n--- VirtualQuery ---\n";
-    std::cout << "Адрес:        " << addr << "\n";
-    std::cout << "Базовый адрес региона:  " << mbi.BaseAddress << "\n";
-    std::cout << "Базовый адрес выделения:" << mbi.AllocationBase << "\n";
-    std::cout << "Размер региона:         " << mbi.RegionSize << " байт\n";
-    std::cout << "Состояние:              " << stateToRu(mbi.State) << "\n";
+    std::cout << "РђРґСЂРµСЃ:        " << addr << "\n";
+    std::cout << "Р‘Р°Р·РѕРІС‹Р№ Р°РґСЂРµСЃ СЂРµРіРёРѕРЅР°:  " << mbi.BaseAddress << "\n";
+    std::cout << "Р‘Р°Р·РѕРІС‹Р№ Р°РґСЂРµСЃ РІС‹РґРµР»РµРЅРёСЏ:" << mbi.AllocationBase << "\n";
+    std::cout << "Р Р°Р·РјРµСЂ СЂРµРіРёРѕРЅР°:         " << mbi.RegionSize << " Р±Р°Р№С‚\n";
+    std::cout << "РЎРѕСЃС‚РѕСЏРЅРёРµ:              " << stateToRu(mbi.State) << "\n";
 
     if (mbi.State == MEM_FREE) {
-        std::cout << "Текущая защита:         Не задана\n";
-        std::cout << "Защита при выделении:   Не задана\n";
-        std::cout << "Тип памяти:             Не задан\n";
+        std::cout << "РўРµРєСѓС‰Р°СЏ Р·Р°С‰РёС‚Р°:         РќРµ Р·Р°РґР°РЅР°\n";
+        std::cout << "Р—Р°С‰РёС‚Р° РїСЂРё РІС‹РґРµР»РµРЅРёРё:   РќРµ Р·Р°РґР°РЅР°\n";
+        std::cout << "РўРёРї РїР°РјСЏС‚Рё:             РќРµ Р·Р°РґР°РЅ\n";
     } else {
-        std::cout << "Текущая защита:         " << protectToRu(mbi.Protect) << "\n";
-        std::cout << "Защита при выделении:   " << protectToRu(mbi.AllocationProtect) << "\n";
-        std::cout << "Тип памяти:             " << typeToRu(mbi.Type) << "\n";
+        std::cout << "РўРµРєСѓС‰Р°СЏ Р·Р°С‰РёС‚Р°:         " << protectToRu(mbi.Protect) << "\n";
+        std::cout << "Р—Р°С‰РёС‚Р° РїСЂРё РІС‹РґРµР»РµРЅРёРё:   " << protectToRu(mbi.AllocationProtect) << "\n";
+        std::cout << "РўРёРї РїР°РјСЏС‚Рё:             " << typeToRu(mbi.Type) << "\n";
     }
 }
 
 static void menuVirtualQuery() {
     header("3) VirtualQuery");
-    std::string s = readLine("Введите адрес (hex, напр. 0x7FF6...): ");
+    std::string s = readLine("Р’РІРµРґРёС‚Рµ Р°РґСЂРµСЃ (hex, РЅР°РїСЂ. 0x7FF6...): ");
     void* addr = nullptr;
     if (!parsePtr(s, addr)) {
-        std::cout << "Неверный адрес.\n";
+        std::cout << "РќРµРІРµСЂРЅС‹Р№ Р°РґСЂРµСЃ.\n";
         pauseEnter();
         return;
     }
@@ -322,10 +320,10 @@ static void menuVirtualQuery() {
 }
 
 static bool readSizeForRegion(SIZE_T& sizeOut) {
-    std::string s = readLine("Введите размер региона (например 4096, 64K, 1M): ");
+    std::string s = readLine("Р’РІРµРґРёС‚Рµ СЂР°Р·РјРµСЂ СЂРµРіРёРѕРЅР° (РЅР°РїСЂРёРјРµСЂ 4096, 64K, 1M): ");
     SIZE_T sz = 0;
     if (!parseSize(s, sz) || sz == 0) {
-        std::cout << "Неверный размер.\n";
+        std::cout << "РќРµРІРµСЂРЅС‹Р№ СЂР°Р·РјРµСЂ.\n";
         return false;
     }
     sizeOut = sz;
@@ -335,8 +333,8 @@ static bool readSizeForRegion(SIZE_T& sizeOut) {
 static void menuReserveAuto() {
     header("4) VirtualAlloc: MEM_RESERVE (auto)");
     if (g_base) {
-        std::cout << "Уже есть активный регион: base=" << g_base << ", size=" << g_size << "\n";
-        std::cout << "Сначала освободите (VirtualFree MEM_RELEASE).\n";
+        std::cout << "РЈР¶Рµ РµСЃС‚СЊ Р°РєС‚РёРІРЅС‹Р№ СЂРµРіРёРѕРЅ: base=" << g_base << ", size=" << g_size << "\n";
+        std::cout << "РЎРЅР°С‡Р°Р»Р° РѕСЃРІРѕР±РѕРґРёС‚Рµ (VirtualFree MEM_RELEASE).\n";
         pauseEnter();
         return;
     }
@@ -352,17 +350,17 @@ static void menuReserveAuto() {
     g_base = p;
     g_size = sz;
 
-    std::cout << "OK: зарезервировано.\nbase=" << g_base << " size=" << g_size << "\n";
+    std::cout << "OK: Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРѕ.\nbase=" << g_base << " size=" << g_size << "\n";
     printVirtualQuery(g_base);
 
     pauseEnter();
 }
 
 static void menuReserveAtAddress() {
-    header("5) VirtualAlloc: MEM_RESERVE (ввод адреса)");
+    header("5) VirtualAlloc: MEM_RESERVE (РІРІРѕРґ Р°РґСЂРµСЃР°)");
     if (g_base) {
-        std::cout << "Уже есть активный регион: base=" << g_base << ", size=" << g_size << "\n";
-        std::cout << "Сначала освободите (VirtualFree MEM_RELEASE).\n";
+        std::cout << "РЈР¶Рµ РµСЃС‚СЊ Р°РєС‚РёРІРЅС‹Р№ СЂРµРіРёРѕРЅ: base=" << g_base << ", size=" << g_size << "\n";
+        std::cout << "РЎРЅР°С‡Р°Р»Р° РѕСЃРІРѕР±РѕРґРёС‚Рµ (VirtualFree MEM_RELEASE).\n";
         pauseEnter();
         return;
     }
@@ -373,19 +371,19 @@ static void menuReserveAtAddress() {
     SYSTEM_INFO si{};
     GetSystemInfo(&si);
 
-    std::string s = readLine("Введите желаемый базовый адрес (hex): ");
+    std::string s = readLine("Р’РІРµРґРёС‚Рµ Р¶РµР»Р°РµРјС‹Р№ Р±Р°Р·РѕРІС‹Р№ Р°РґСЂРµСЃ (hex): ");
     void* base = nullptr;
     if (!parsePtr(s, base)) {
-        std::cout << "Неверный адрес.\n";
+        std::cout << "РќРµРІРµСЂРЅС‹Р№ Р°РґСЂРµСЃ.\n";
         pauseEnter();
         return;
     }
 
-    // Проверим выравнивание по AllocationGranularity
+    // РџСЂРѕРІРµСЂРёРј РІС‹СЂР°РІРЅРёРІР°РЅРёРµ РїРѕ AllocationGranularity
     uintptr_t b = (uintptr_t)base;
     if (b % si.dwAllocationGranularity != 0) {
-        std::cout << "Адрес НЕ выровнен по dwAllocationGranularity=" << si.dwAllocationGranularity << ".\n";
-        std::cout << "VirtualAlloc скорее всего завершится ошибкой.\n";
+        std::cout << "РђРґСЂРµСЃ РќР• РІС‹СЂРѕРІРЅРµРЅ РїРѕ dwAllocationGranularity=" << si.dwAllocationGranularity << ".\n";
+        std::cout << "VirtualAlloc СЃРєРѕСЂРµРµ РІСЃРµРіРѕ Р·Р°РІРµСЂС€РёС‚СЃСЏ РѕС€РёР±РєРѕР№.\n";
     }
 
     void* p = VirtualAlloc(base, sz, MEM_RESERVE, PAGE_NOACCESS);
@@ -397,27 +395,27 @@ static void menuReserveAtAddress() {
     g_base = p;
     g_size = sz;
 
-    std::cout << "OK: зарезервировано.\nbase=" << g_base << " size=" << g_size << "\n";
+    std::cout << "OK: Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРѕ.\nbase=" << g_base << " size=" << g_size << "\n";
     printVirtualQuery(g_base);
 
     pauseEnter();
 }
 
 static void menuCommitAuto() {
-    header("6) VirtualAlloc: MEM_COMMIT (для текущего региона)");
+    header("6) VirtualAlloc: MEM_COMMIT (РґР»СЏ С‚РµРєСѓС‰РµРіРѕ СЂРµРіРёРѕРЅР°)");
     if (!g_base) {
-        std::cout << "Нет активного зарезервированного региона. Сначала RESERVE.\n";
+        std::cout << "РќРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРЅРѕРіРѕ СЂРµРіРёРѕРЅР°. РЎРЅР°С‡Р°Р»Р° RESERVE.\n";
         pauseEnter();
         return;
     }
-    // commit весь регион
+    // commit РІРµСЃСЊ СЂРµРіРёРѕРЅ
     void* p = VirtualAlloc(g_base, g_size, MEM_COMMIT, PAGE_READWRITE);
     if (!p) {
         printLastError("VirtualAlloc(MEM_COMMIT)");
         pauseEnter();
         return;
     }
-    std::cout << "OK: выполнен COMMIT для base=" << g_base << " size=" << g_size << "\n";
+    std::cout << "OK: РІС‹РїРѕР»РЅРµРЅ COMMIT РґР»СЏ base=" << g_base << " size=" << g_size << "\n";
     printVirtualQuery(g_base);
     pauseEnter();
 }
@@ -425,8 +423,8 @@ static void menuCommitAuto() {
 static void menuReserveCommitAuto() {
     header("7) VirtualAlloc: MEM_RESERVE|MEM_COMMIT (auto)");
     if (g_base) {
-        std::cout << "Уже есть активный регион: base=" << g_base << ", size=" << g_size << "\n";
-        std::cout << "Сначала освободите (VirtualFree MEM_RELEASE).\n";
+        std::cout << "РЈР¶Рµ РµСЃС‚СЊ Р°РєС‚РёРІРЅС‹Р№ СЂРµРіРёРѕРЅ: base=" << g_base << ", size=" << g_size << "\n";
+        std::cout << "РЎРЅР°С‡Р°Р»Р° РѕСЃРІРѕР±РѕРґРёС‚Рµ (VirtualFree MEM_RELEASE).\n";
         pauseEnter();
         return;
     }
@@ -449,10 +447,10 @@ static void menuReserveCommitAuto() {
 }
 
 static void menuReserveCommitAtAddress() {
-    header("8) VirtualAlloc: MEM_RESERVE|MEM_COMMIT (ввод адреса)");
+    header("8) VirtualAlloc: MEM_RESERVE|MEM_COMMIT (РІРІРѕРґ Р°РґСЂРµСЃР°)");
     if (g_base) {
-        std::cout << "Уже есть активный регион: base=" << g_base << ", size=" << g_size << "\n";
-        std::cout << "Сначала освободите (VirtualFree MEM_RELEASE).\n";
+        std::cout << "РЈР¶Рµ РµСЃС‚СЊ Р°РєС‚РёРІРЅС‹Р№ СЂРµРіРёРѕРЅ: base=" << g_base << ", size=" << g_size << "\n";
+        std::cout << "РЎРЅР°С‡Р°Р»Р° РѕСЃРІРѕР±РѕРґРёС‚Рµ (VirtualFree MEM_RELEASE).\n";
         pauseEnter();
         return;
     }
@@ -463,18 +461,18 @@ static void menuReserveCommitAtAddress() {
     SYSTEM_INFO si{};
     GetSystemInfo(&si);
 
-    std::string s = readLine("Введите желаемый базовый адрес (hex): ");
+    std::string s = readLine("Р’РІРµРґРёС‚Рµ Р¶РµР»Р°РµРјС‹Р№ Р±Р°Р·РѕРІС‹Р№ Р°РґСЂРµСЃ (hex): ");
     void* base = nullptr;
     if (!parsePtr(s, base)) {
-        std::cout << "Неверный адрес.\n";
+        std::cout << "РќРµРІРµСЂРЅС‹Р№ Р°РґСЂРµСЃ.\n";
         pauseEnter();
         return;
     }
 
     uintptr_t b = (uintptr_t)base;
     if (b % si.dwAllocationGranularity != 0) {
-        std::cout << "Адрес НЕ выровнен по dwAllocationGranularity=" << si.dwAllocationGranularity << ".\n";
-        std::cout << "VirtualAlloc может завершиться ошибкой.\n";
+        std::cout << "РђРґСЂРµСЃ РќР• РІС‹СЂРѕРІРЅРµРЅ РїРѕ dwAllocationGranularity=" << si.dwAllocationGranularity << ".\n";
+        std::cout << "VirtualAlloc РјРѕР¶РµС‚ Р·Р°РІРµСЂС€РёС‚СЊСЃСЏ РѕС€РёР±РєРѕР№.\n";
     }
 
     void* p = VirtualAlloc(base, sz, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -493,21 +491,21 @@ static void menuReserveCommitAtAddress() {
 }
 
 static void menuWriteMemory() {
-    header("9) Запись DWORD по адресу");
-    std::cout << "\n--- Запись DWORD по адресу ---\n";
+    header("9) Р—Р°РїРёСЃСЊ DWORD РїРѕ Р°РґСЂРµСЃСѓ");
+    std::cout << "\n--- Р—Р°РїРёСЃСЊ DWORD РїРѕ Р°РґСЂРµСЃСѓ ---\n";
     if (g_base) {
-        std::cout << "Текущий регион: base=" << g_base << " size=" << g_size << "\n";
+        std::cout << "РўРµРєСѓС‰РёР№ СЂРµРіРёРѕРЅ: base=" << g_base << " size=" << g_size << "\n";
     }
 
-    std::string sAddr = readLine("Введите адрес назначения (hex): ");
+    std::string sAddr = readLine("Р’РІРµРґРёС‚Рµ Р°РґСЂРµСЃ РЅР°Р·РЅР°С‡РµРЅРёСЏ (hex): ");
     void* addr = nullptr;
     if (!parsePtr(sAddr, addr)) {
-        std::cout << "Неверный адрес.\n";
+        std::cout << "РќРµРІРµСЂРЅС‹Р№ Р°РґСЂРµСЃ.\n";
         pauseEnter();
         return;
     }
 
-    std::string sVal = readLine("Введите значение DWORD (например: 1234 или 0x1234): ");
+    std::string sVal = readLine("Р’РІРµРґРёС‚Рµ Р·РЅР°С‡РµРЅРёРµ DWORD (РЅР°РїСЂРёРјРµСЂ: 1234 РёР»Рё 0x1234): ");
     unsigned long v = 0;
     try {
         size_t idx = 0;
@@ -523,7 +521,7 @@ static void menuWriteMemory() {
         v = std::stoul(t, &idx, base);
         if (idx != t.size()) throw std::runtime_error("bad");
     } catch (...) {
-        std::cout << "Неверное значение.\n";
+        std::cout << "РќРµРІРµСЂРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ.\n";
         pauseEnter();
         return;
     }
@@ -535,11 +533,11 @@ static void menuWriteMemory() {
         return;
     }
 
-    std::cout << "Статус: " << stateToRu(mbi.State)
+    std::cout << "РЎС‚Р°С‚СѓСЃ: " << stateToRu(mbi.State)
               << ", Protect: " << protectToStr(mbi.Protect) << "\n";
 
     if (mbi.State != MEM_COMMIT) {
-        std::cout << "Нельзя выполнять запись: регион только зарезервирован и не переведен в состояние MEM_COMMIT.\n";
+        std::cout << "РќРµР»СЊР·СЏ РІС‹РїРѕР»РЅСЏС‚СЊ Р·Р°РїРёСЃСЊ: СЂРµРіРёРѕРЅ С‚РѕР»СЊРєРѕ Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅ Рё РЅРµ РїРµСЂРµРІРµРґРµРЅ РІ СЃРѕСЃС‚РѕСЏРЅРёРµ MEM_COMMIT.\n";
         pauseEnter();
         return;
     }
@@ -552,16 +550,16 @@ static void menuWriteMemory() {
         (p == PAGE_EXECUTE_WRITECOPY);
 
     if (!canWrite) {
-        std::cout << "Защита не разрешает запись. Используйте VirtualProtect.\n";
+        std::cout << "Р—Р°С‰РёС‚Р° РЅРµ СЂР°Р·СЂРµС€Р°РµС‚ Р·Р°РїРёСЃСЊ. РСЃРїРѕР»СЊР·СѓР№С‚Рµ VirtualProtect.\n";
         pauseEnter();
         return;
     }
 
-    // Пишем. Если адрес валидный и страница COMMIT+WRITE — это безопасно.
+    // РџРёС€РµРј. Р•СЃР»Рё Р°РґСЂРµСЃ РІР°Р»РёРґРЅС‹Р№ Рё СЃС‚СЂР°РЅРёС†Р° COMMIT+WRITE вЂ” СЌС‚Рѕ Р±РµР·РѕРїР°СЃРЅРѕ.
     *(volatile DWORD*)addr = (DWORD)v;
 
-    std::cout << "OK: записано.\n";
-    std::cout << "Прочитано обратно: " << std::hex << std::showbase
+    std::cout << "OK: Р·Р°РїРёСЃР°РЅРѕ.\n";
+    std::cout << "РџСЂРѕС‡РёС‚Р°РЅРѕ РѕР±СЂР°С‚РЅРѕ: " << std::hex << std::showbase
               << *(volatile DWORD*)addr << std::dec << std::noshowbase << "\n";
 
     pauseEnter();
@@ -570,12 +568,12 @@ static void menuWriteMemory() {
 static void menuProtect() {
     header("10) VirtualProtect");
     std::cout << "\n--- VirtualProtect ---\n";
-    std::cout << "Если region выделен: base=" << g_base << " size=" << g_size << "\n";
+    std::cout << "Р•СЃР»Рё region РІС‹РґРµР»РµРЅ: base=" << g_base << " size=" << g_size << "\n";
 
-    std::string sBase = readLine("Введите базовый адрес (hex): ");
+    std::string sBase = readLine("Р’РІРµРґРёС‚Рµ Р±Р°Р·РѕРІС‹Р№ Р°РґСЂРµСЃ (hex): ");
     void* base = nullptr;
     if (!parsePtr(sBase, base)) {
-        std::cout << "Неверный адрес.\n";
+        std::cout << "РќРµРІРµСЂРЅС‹Р№ Р°РґСЂРµСЃ.\n";
         pauseEnter();
         return;
     }
@@ -585,7 +583,7 @@ static void menuProtect() {
 
     DWORD np = parseProtectChoice();
     if (np == 0) {
-        std::cout << "Неверный выбор защиты.\n";
+        std::cout << "РќРµРІРµСЂРЅС‹Р№ РІС‹Р±РѕСЂ Р·Р°С‰РёС‚С‹.\n";
         pauseEnter();
         return;
     }
@@ -597,10 +595,10 @@ static void menuProtect() {
         return;
     }
 
-    std::cout << "OK: защита изменена.\n";
+    std::cout << "OK: Р·Р°С‰РёС‚Р° РёР·РјРµРЅРµРЅР°.\n";
     std::cout << "OldProtect: " << protectToStr(oldp) << "\n";
 
-    // Проверка: просто выводим, что VirtualQuery теперь показывает новую защиту
+    // РџСЂРѕРІРµСЂРєР°: РїСЂРѕСЃС‚Рѕ РІС‹РІРѕРґРёРј, С‡С‚Рѕ VirtualQuery С‚РµРїРµСЂСЊ РїРѕРєР°Р·С‹РІР°РµС‚ РЅРѕРІСѓСЋ Р·Р°С‰РёС‚Сѓ
     printVirtualQuery(base);
 
 
@@ -610,14 +608,14 @@ static void menuProtect() {
 static void menuDecommit() {
     header("11) VirtualFree: MEM_DECOMMIT");
     if (!g_base) {
-        std::cout << "Нет активного региона.\n";
+        std::cout << "РќРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ СЂРµРіРёРѕРЅР°.\n";
         pauseEnter();
         return;
     }
 
     std::cout << "\n--- VirtualFree MEM_DECOMMIT ---\n";
-    std::cout << "Текущий регион: base=" << g_base << " size=" << g_size << "\n";
-    std::cout << "Это снимет COMMIT (физическую память), но оставит RESERVE.\n";
+    std::cout << "РўРµРєСѓС‰РёР№ СЂРµРіРёРѕРЅ: base=" << g_base << " size=" << g_size << "\n";
+    std::cout << "Р­С‚Рѕ СЃРЅРёРјРµС‚ COMMIT (С„РёР·РёС‡РµСЃРєСѓСЋ РїР°РјСЏС‚СЊ), РЅРѕ РѕСЃС‚Р°РІРёС‚ RESERVE.\n";
 
     if (!VirtualFree(g_base, g_size, MEM_DECOMMIT)) {
         printLastError("VirtualFree(MEM_DECOMMIT)");
@@ -625,7 +623,7 @@ static void menuDecommit() {
         return;
     }
 
-    std::cout << "OK: decommit выполнен.\n";
+    std::cout << "OK: decommit РІС‹РїРѕР»РЅРµРЅ.\n";
     printVirtualQuery(g_base);
 
     pauseEnter();
@@ -634,21 +632,21 @@ static void menuDecommit() {
 static void menuRelease() {
     header("12) VirtualFree: MEM_RELEASE");
     if (!g_base) {
-        std::cout << "Нет активного региона.\n";
+        std::cout << "РќРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ СЂРµРіРёРѕРЅР°.\n";
         pauseEnter();
         return;
     }
 
     std::cout << "\n--- VirtualFree MEM_RELEASE ---\n";
-    std::cout << "Текущий регион: base=" << g_base << " size=" << g_size << "\n";
-    std::cout << "Это полностью освободит регион (и RESERVE, и COMMIT).\n";
+    std::cout << "РўРµРєСѓС‰РёР№ СЂРµРіРёРѕРЅ: base=" << g_base << " size=" << g_size << "\n";
+    std::cout << "Р­С‚Рѕ РїРѕР»РЅРѕСЃС‚СЊСЋ РѕСЃРІРѕР±РѕРґРёС‚ СЂРµРіРёРѕРЅ (Рё RESERVE, Рё COMMIT).\n";
 
     if (!VirtualFree(g_base, 0, MEM_RELEASE)) {
         printLastError("VirtualFree(MEM_RELEASE)");
         pauseEnter();
         return;
     }
-    std::cout << "OK: регион освобождён.\n";
+    std::cout << "OK: СЂРµРіРёРѕРЅ РѕСЃРІРѕР±РѕР¶РґС‘РЅ.\n";
 
     printVirtualQuery(g_base);
     g_base = nullptr;
@@ -659,24 +657,24 @@ static void menuRelease() {
 
 static void printMenu() {
     std::cout << "\n====================================================================\n";
-    std::cout << "Работа 2. Управление памятью. Задание 2.1\n";
-    std::cout << "Исследование виртуального адресного пространства процесса\n";
-    std::cout << "Активный регион: base=" << g_base
+    std::cout << "Р Р°Р±РѕС‚Р° 2. РЈРїСЂР°РІР»РµРЅРёРµ РїР°РјСЏС‚СЊСЋ. Р—Р°РґР°РЅРёРµ 2.1\n";
+    std::cout << "РСЃСЃР»РµРґРѕРІР°РЅРёРµ РІРёСЂС‚СѓР°Р»СЊРЅРѕРіРѕ Р°РґСЂРµСЃРЅРѕРіРѕ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІР° РїСЂРѕС†РµСЃСЃР°\n";
+    std::cout << "РђРєС‚РёРІРЅС‹Р№ СЂРµРіРёРѕРЅ: base=" << g_base
               << " size=" << (unsigned long long)g_size << "\n";
     std::cout << "--------------------------------------------------------------------\n";
-    std::cout << " 1) GetSystemInfo - получение информации о вычислительной системе\n";
-    std::cout << " 2) GlobalMemoryStatusEx - определение статуса виртуальной памяти\n";
-    std::cout << " 3) VirtualQuery - определение состояния участка памяти по адресу\n";
-    std::cout << " 4) VirtualAlloc: MEM_RESERVE (auto) - раздельное резервирование региона\n";
-    std::cout << " 5) VirtualAlloc: MEM_RESERVE (ввод адреса) - резервирование региона по введенному адресу\n";
-    std::cout << " 6) VirtualAlloc: MEM_COMMIT - передача физической памяти зарезервированному региону\n";
-    std::cout << " 7) VirtualAlloc: MEM_RESERVE | MEM_COMMIT (auto) - одновременное резервирование и выделение памяти\n";
-    std::cout << " 8) VirtualAlloc: MEM_RESERVE | MEM_COMMIT (ввод адреса) - то же по введенному адресу\n";
-    std::cout << " 9) Запись DWORD по адресу - запись данных в ячейку памяти\n";
-    std::cout << "10) VirtualProtect - установка и проверка защиты доступа к памяти\n";
-    std::cout << "11) VirtualFree: MEM_DECOMMIT - освобождение физической памяти без удаления региона\n";
-    std::cout << "12) VirtualFree: MEM_RELEASE - полное освобождение региона памяти\n";
-    std::cout << " 0) Выход\n";
+    std::cout << " 1) GetSystemInfo - РїРѕР»СѓС‡РµРЅРёРµ РёРЅС„РѕСЂРјР°С†РёРё Рѕ РІС‹С‡РёСЃР»РёС‚РµР»СЊРЅРѕР№ СЃРёСЃС‚РµРјРµ\n";
+    std::cout << " 2) GlobalMemoryStatusEx - РѕРїСЂРµРґРµР»РµРЅРёРµ СЃС‚Р°С‚СѓСЃР° РІРёСЂС‚СѓР°Р»СЊРЅРѕР№ РїР°РјСЏС‚Рё\n";
+    std::cout << " 3) VirtualQuery - РѕРїСЂРµРґРµР»РµРЅРёРµ СЃРѕСЃС‚РѕСЏРЅРёСЏ СѓС‡Р°СЃС‚РєР° РїР°РјСЏС‚Рё РїРѕ Р°РґСЂРµСЃСѓ\n";
+    std::cout << " 4) VirtualAlloc: MEM_RESERVE (auto) - СЂР°Р·РґРµР»СЊРЅРѕРµ СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРёРµ СЂРµРіРёРѕРЅР°\n";
+    std::cout << " 5) VirtualAlloc: MEM_RESERVE (РІРІРѕРґ Р°РґСЂРµСЃР°) - СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРёРµ СЂРµРіРёРѕРЅР° РїРѕ РІРІРµРґРµРЅРЅРѕРјСѓ Р°РґСЂРµСЃСѓ\n";
+    std::cout << " 6) VirtualAlloc: MEM_COMMIT - РїРµСЂРµРґР°С‡Р° С„РёР·РёС‡РµСЃРєРѕР№ РїР°РјСЏС‚Рё Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРЅРѕРјСѓ СЂРµРіРёРѕРЅСѓ\n";
+    std::cout << " 7) VirtualAlloc: MEM_RESERVE | MEM_COMMIT (auto) - РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕРµ СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРёРµ Рё РІС‹РґРµР»РµРЅРёРµ РїР°РјСЏС‚Рё\n";
+    std::cout << " 8) VirtualAlloc: MEM_RESERVE | MEM_COMMIT (РІРІРѕРґ Р°РґСЂРµСЃР°) - С‚Рѕ Р¶Рµ РїРѕ РІРІРµРґРµРЅРЅРѕРјСѓ Р°РґСЂРµСЃСѓ\n";
+    std::cout << " 9) Р—Р°РїРёСЃСЊ DWORD РїРѕ Р°РґСЂРµСЃСѓ - Р·Р°РїРёСЃСЊ РґР°РЅРЅС‹С… РІ СЏС‡РµР№РєСѓ РїР°РјСЏС‚Рё\n";
+    std::cout << "10) VirtualProtect - СѓСЃС‚Р°РЅРѕРІРєР° Рё РїСЂРѕРІРµСЂРєР° Р·Р°С‰РёС‚С‹ РґРѕСЃС‚СѓРїР° Рє РїР°РјСЏС‚Рё\n";
+    std::cout << "11) VirtualFree: MEM_DECOMMIT - РѕСЃРІРѕР±РѕР¶РґРµРЅРёРµ С„РёР·РёС‡РµСЃРєРѕР№ РїР°РјСЏС‚Рё Р±РµР· СѓРґР°Р»РµРЅРёСЏ СЂРµРіРёРѕРЅР°\n";
+    std::cout << "12) VirtualFree: MEM_RELEASE - РїРѕР»РЅРѕРµ РѕСЃРІРѕР±РѕР¶РґРµРЅРёРµ СЂРµРіРёРѕРЅР° РїР°РјСЏС‚Рё\n";
+    std::cout << " 0) Р’С‹С…РѕРґ\n";
     std::cout << "====================================================================\n";
 }
 
@@ -685,7 +683,7 @@ int main() {
     while (true) {
         clearScreen();
         printMenu();
-        std::string s = readLine("Выберите пункт: ");
+        std::string s = readLine("Р’С‹Р±РµСЂРёС‚Рµ РїСѓРЅРєС‚: ");
         int c = -1;
         try { c = std::stoi(s); } catch (...) { c = -1; }
 
@@ -703,11 +701,11 @@ int main() {
             case 11: menuDecommit(); break;
             case 12: menuRelease(); break;
             case 0:
-                // аккуратно освободим, если забыли
+                // Р°РєРєСѓСЂР°С‚РЅРѕ РѕСЃРІРѕР±РѕРґРёРј, РµСЃР»Рё Р·Р°Р±С‹Р»Рё
                 if (g_base) VirtualFree(g_base, 0, MEM_RELEASE);
                 return 0;
             default:
-                std::cout << "Неверный пункт.\n";
+                std::cout << "РќРµРІРµСЂРЅС‹Р№ РїСѓРЅРєС‚.\n";
                 pauseEnter();
                 break;
         }

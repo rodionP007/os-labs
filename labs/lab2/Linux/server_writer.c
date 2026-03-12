@@ -20,13 +20,13 @@
 static int   g_fd_file = -1;
 static void* g_ptr = NULL;
 
-static int   g_fd_ready_w = -1; // пишем "готово"
-static int   g_fd_read_r  = -1; // читаем "прочитано"
+static int   g_fd_ready_w = -1; // РїРёС€РµРј "РіРѕС‚РѕРІРѕ"
+static int   g_fd_read_r  = -1; // С‡РёС‚Р°РµРј "РїСЂРѕС‡РёС‚Р°РЅРѕ"
 
 static void clearScreen(void) { system("clear"); }
 
 static void pauseEnter(void) {
-    printf("\n[Enter] назад в меню...");
+    printf("\n[Enter] РЅР°Р·Р°Рґ РІ РјРµРЅСЋ...");
     fflush(stdout);
     int c;
     while ((c = getchar()) != '\n' && c != EOF) {}
@@ -74,18 +74,18 @@ static int wait_readable_select(int fd, int seconds) {
 }
 
 static void menu_map(void) {
-    header("Сервер: выполнить проецирование (создать файл + mmap + FIFO)");
+    header("РЎРµСЂРІРµСЂ: РІС‹РїРѕР»РЅРёС‚СЊ РїСЂРѕРµС†РёСЂРѕРІР°РЅРёРµ (СЃРѕР·РґР°С‚СЊ С„Р°Р№Р» + mmap + FIFO)");
 
-    // очистим старые артефакты (если остались)
+    // РѕС‡РёСЃС‚РёРј СЃС‚Р°СЂС‹Рµ Р°СЂС‚РµС„Р°РєС‚С‹ (РµСЃР»Рё РѕСЃС‚Р°Р»РёСЃСЊ)
     unlink(FILENAME);
     unlink(FIFO_READY);
     unlink(FIFO_READ);
 
-    // создаём FIFO для синхронизации
+    // СЃРѕР·РґР°С‘Рј FIFO РґР»СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё
     if (mkfifo(FIFO_READY, 0666) != 0) { perr("mkfifo READY"); pauseEnter(); return; }
     if (mkfifo(FIFO_READ,  0666) != 0) { perr("mkfifo READ");  pauseEnter(); return; }
 
-    // создаём файл
+    // СЃРѕР·РґР°С‘Рј С„Р°Р№Р»
     g_fd_file = open(FILENAME, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (g_fd_file == -1) { perr("open file"); pauseEnter(); return; }
 
@@ -96,27 +96,27 @@ static void menu_map(void) {
     if (g_ptr == MAP_FAILED) { g_ptr = NULL; perr("mmap"); pauseEnter(); return; }
     memset(g_ptr, 0, FILESIZE);
 
-    // Открываем FIFO:
-    // - READY: мы будем писать, но open(O_WRONLY) блокирует пока клиент не откроет на чтение.
-    //   Чтобы сервер не зависал, откроем в O_WRONLY|O_NONBLOCK, а если нет читателя — скажем запустить клиента.
+    // РћС‚РєСЂС‹РІР°РµРј FIFO:
+    // - READY: РјС‹ Р±СѓРґРµРј РїРёСЃР°С‚СЊ, РЅРѕ open(O_WRONLY) Р±Р»РѕРєРёСЂСѓРµС‚ РїРѕРєР° РєР»РёРµРЅС‚ РЅРµ РѕС‚РєСЂРѕРµС‚ РЅР° С‡С‚РµРЅРёРµ.
+    //   Р§С‚РѕР±С‹ СЃРµСЂРІРµСЂ РЅРµ Р·Р°РІРёСЃР°Р», РѕС‚РєСЂРѕРµРј РІ O_WRONLY|O_NONBLOCK, Р° РµСЃР»Рё РЅРµС‚ С‡РёС‚Р°С‚РµР»СЏ вЂ” СЃРєР°Р¶РµРј Р·Р°РїСѓСЃС‚РёС‚СЊ РєР»РёРµРЅС‚Р°.
     g_fd_ready_w = open(FIFO_READY, O_WRONLY | O_NONBLOCK);
     if (g_fd_ready_w == -1) {
         if (errno == ENXIO) {
-            printf("FIFO_READY пока без читателя. Запусти клиент и сделай у него 'выполнить проецирование',\n");
-            printf("потом вернись и снова выбери пункт 1 (или просто пункт 2 — после открытия FIFO).\n");
+            printf("FIFO_READY РїРѕРєР° Р±РµР· С‡РёС‚Р°С‚РµР»СЏ. Р—Р°РїСѓСЃС‚Рё РєР»РёРµРЅС‚ Рё СЃРґРµР»Р°Р№ Сѓ РЅРµРіРѕ 'РІС‹РїРѕР»РЅРёС‚СЊ РїСЂРѕРµС†РёСЂРѕРІР°РЅРёРµ',\n");
+            printf("РїРѕС‚РѕРј РІРµСЂРЅРёСЃСЊ Рё СЃРЅРѕРІР° РІС‹Р±РµСЂРё РїСѓРЅРєС‚ 1 (РёР»Рё РїСЂРѕСЃС‚Рѕ РїСѓРЅРєС‚ 2 вЂ” РїРѕСЃР»Рµ РѕС‚РєСЂС‹С‚РёСЏ FIFO).\n");
         } else {
             perr("open FIFO_READY (write)");
         }
-        // не выходим: mmap уже есть; можно позже переоткрыть FIFO при записи
+        // РЅРµ РІС‹С…РѕРґРёРј: mmap СѓР¶Рµ РµСЃС‚СЊ; РјРѕР¶РЅРѕ РїРѕР·Р¶Рµ РїРµСЂРµРѕС‚РєСЂС‹С‚СЊ FIFO РїСЂРё Р·Р°РїРёСЃРё
     }
 
-    // - READ: мы будем читать подтверждение; open(O_RDONLY|O_NONBLOCK) не блокирует
+    // - READ: РјС‹ Р±СѓРґРµРј С‡РёС‚Р°С‚СЊ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ; open(O_RDONLY|O_NONBLOCK) РЅРµ Р±Р»РѕРєРёСЂСѓРµС‚
     g_fd_read_r = open(FIFO_READ, O_RDONLY | O_NONBLOCK);
     if (g_fd_read_r == -1) { perr("open FIFO_READ (read)"); pauseEnter(); return; }
 
-    printf("OK\nФайл: %s (size=%d)\nАдрес mmap: %p\n", FILENAME, FILESIZE, g_ptr);
+    printf("OK\nР¤Р°Р№Р»: %s (size=%d)\nРђРґСЂРµСЃ mmap: %p\n", FILENAME, FILESIZE, g_ptr);
     printf("FIFO_READY: %s\nFIFO_READ : %s\n", FIFO_READY, FIFO_READ);
-    printf("\nДальше: клиент -> 'выполнить проецирование', затем сервер -> 'записать данные'.\n");
+    printf("\nР”Р°Р»СЊС€Рµ: РєР»РёРµРЅС‚ -> 'РІС‹РїРѕР»РЅРёС‚СЊ РїСЂРѕРµС†РёСЂРѕРІР°РЅРёРµ', Р·Р°С‚РµРј СЃРµСЂРІРµСЂ -> 'Р·Р°РїРёСЃР°С‚СЊ РґР°РЅРЅС‹Рµ'.\n");
     pauseEnter();
 }
 
@@ -126,10 +126,10 @@ static void ensure_ready_fifo_open(void) {
 }
 
 static void menu_write(void) {
-    header("Сервер: записать данные и ждать чтения (select)");
+    header("РЎРµСЂРІРµСЂ: Р·Р°РїРёСЃР°С‚СЊ РґР°РЅРЅС‹Рµ Рё Р¶РґР°С‚СЊ С‡С‚РµРЅРёСЏ (select)");
 
     if (!g_ptr) {
-        printf("Сначала выполните проецирование (пункт 1).\n");
+        printf("РЎРЅР°С‡Р°Р»Р° РІС‹РїРѕР»РЅРёС‚Рµ РїСЂРѕРµС†РёСЂРѕРІР°РЅРёРµ (РїСѓРЅРєС‚ 1).\n");
         pauseEnter();
         return;
     }
@@ -137,8 +137,8 @@ static void menu_write(void) {
     ensure_ready_fifo_open();
     if (g_fd_ready_w == -1) {
         if (errno == ENXIO) {
-            printf("Клиент ещё не открыл FIFO_READY на чтение.\n");
-            printf("Запусти клиент, выбери 'выполнить проецирование', затем попробуй снова.\n");
+            printf("РљР»РёРµРЅС‚ РµС‰С‘ РЅРµ РѕС‚РєСЂС‹Р» FIFO_READY РЅР° С‡С‚РµРЅРёРµ.\n");
+            printf("Р—Р°РїСѓСЃС‚Рё РєР»РёРµРЅС‚, РІС‹Р±РµСЂРё 'РІС‹РїРѕР»РЅРёС‚СЊ РїСЂРѕРµС†РёСЂРѕРІР°РЅРёРµ', Р·Р°С‚РµРј РїРѕРїСЂРѕР±СѓР№ СЃРЅРѕРІР°.\n");
         } else {
             perr("open FIFO_READY (write)");
         }
@@ -147,11 +147,11 @@ static void menu_write(void) {
     }
 
     char buf[FILESIZE];
-    printf("Введите строку (до %d байт):\n> ", FILESIZE - 1);
+    printf("Р’РІРµРґРёС‚Рµ СЃС‚СЂРѕРєСѓ (РґРѕ %d Р±Р°Р№С‚):\n> ", FILESIZE - 1);
     fflush(stdout);
 
     if (!fgets(buf, sizeof(buf), stdin)) {
-        printf("Ввод отменён.\n");
+        printf("Р’РІРѕРґ РѕС‚РјРµРЅС‘РЅ.\n");
         pauseEnter();
         return;
     }
@@ -160,7 +160,7 @@ static void menu_write(void) {
     memset(g_ptr, 0, FILESIZE);
     strncpy((char*)g_ptr, buf, FILESIZE - 1);
 
-    // Сигнал "готово" (1 байт)
+    // РЎРёРіРЅР°Р» "РіРѕС‚РѕРІРѕ" (1 Р±Р°Р№С‚)
     const char one = '1';
     if (write(g_fd_ready_w, &one, 1) != 1) {
         perr("write FIFO_READY");
@@ -168,13 +168,13 @@ static void menu_write(void) {
         return;
     }
 
-    printf("\nДанные записаны. Жду подтверждения чтения от клиента (select на FIFO_READ)...\n");
+    printf("\nР”Р°РЅРЅС‹Рµ Р·Р°РїРёСЃР°РЅС‹. Р–РґСѓ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ С‡С‚РµРЅРёСЏ РѕС‚ РєР»РёРµРЅС‚Р° (select РЅР° FIFO_READ)...\n");
 
-    // Ждём readable на FIFO_READ
+    // Р–РґС‘Рј readable РЅР° FIFO_READ
     int wr = wait_readable_select(g_fd_read_r, 60);
     if (wr < 0) { perr("select"); pauseEnter(); return; }
     if (wr == 0) {
-        printf("Timeout: клиент не подтвердил чтение за 60 секунд.\n");
+        printf("Timeout: РєР»РёРµРЅС‚ РЅРµ РїРѕРґС‚РІРµСЂРґРёР» С‡С‚РµРЅРёРµ Р·Р° 60 СЃРµРєСѓРЅРґ.\n");
         pauseEnter();
         return;
     }
@@ -187,20 +187,20 @@ static void menu_write(void) {
         return;
     }
 
-    printf("Клиент подтвердил чтение.\n");
-    printf("\nСнимаю отображение и удаляю файл/каналы...\n");
+    printf("РљР»РёРµРЅС‚ РїРѕРґС‚РІРµСЂРґРёР» С‡С‚РµРЅРёРµ.\n");
+    printf("\nРЎРЅРёРјР°СЋ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ Рё СѓРґР°Р»СЏСЋ С„Р°Р№Р»/РєР°РЅР°Р»С‹...\n");
     cleanup_all_and_delete();
-    printf("Готово. Чтобы начать заново — снова пункт 1.\n");
+    printf("Р“РѕС‚РѕРІРѕ. Р§С‚РѕР±С‹ РЅР°С‡Р°С‚СЊ Р·Р°РЅРѕРІРѕ вЂ” СЃРЅРѕРІР° РїСѓРЅРєС‚ 1.\n");
     pauseEnter();
 }
 
 static void print_menu(void) {
     printf("============== SERVER ==============\n");
-    printf("mmap: %s\n", g_ptr ? "есть" : "нет");
+    printf("mmap: %s\n", g_ptr ? "РµСЃС‚СЊ" : "РЅРµС‚");
     printf("------------------------------------\n");
-    printf("1) выполнить проецирование\n");
-    printf("2) записать данные\n");
-    printf("3) завершить работу\n");
+    printf("1) РІС‹РїРѕР»РЅРёС‚СЊ РїСЂРѕРµС†РёСЂРѕРІР°РЅРёРµ\n");
+    printf("2) Р·Р°РїРёСЃР°С‚СЊ РґР°РЅРЅС‹Рµ\n");
+    printf("3) Р·Р°РІРµСЂС€РёС‚СЊ СЂР°Р±РѕС‚Сѓ\n");
     printf("====================================\n");
 }
 
@@ -208,7 +208,7 @@ int main(void) {
     while (1) {
         clearScreen();
         print_menu();
-        printf("Выберите пункт: ");
+        printf("Р’С‹Р±РµСЂРёС‚Рµ РїСѓРЅРєС‚: ");
         fflush(stdout);
 
         char line[32];
@@ -218,12 +218,12 @@ int main(void) {
         if (c == 1) menu_map();
         else if (c == 2) menu_write();
         else if (c == 3) {
-            header("Сервер: завершение работы");
+            header("РЎРµСЂРІРµСЂ: Р·Р°РІРµСЂС€РµРЅРёРµ СЂР°Р±РѕС‚С‹");
             cleanup_all_and_delete();
-            printf("Выход.\n");
+            printf("Р’С‹С…РѕРґ.\n");
             break;
         } else {
-            printf("Неверный пункт.\n");
+            printf("РќРµРІРµСЂРЅС‹Р№ РїСѓРЅРєС‚.\n");
             pauseEnter();
         }
     }
