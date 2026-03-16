@@ -70,7 +70,6 @@ static int wait_readable_select(int fd, int seconds) {
 static void menu_map(void) {
     header("Клиент: выполнить проецирование (open + mmap + FIFO)");
 
-    // открыть FIFO (сервер должен создать их первым пунктом 1)
     g_fd_ready_r = open(FIFO_READY, O_RDONLY | O_NONBLOCK);
     if (g_fd_ready_r == -1) {
         perr("open FIFO_READY (read) (сервер должен создать сначала)");
@@ -78,9 +77,6 @@ static void menu_map(void) {
         return;
     }
 
-    // FIFO_READ: нам надо писать подтверждение.
-    // open(O_WRONLY) может блокировать, если нет читателя.
-    // Сервер читает с O_RDONLY|O_NONBLOCK, так что читатель есть -> можно O_WRONLY.
     g_fd_read_w = open(FIFO_READ, O_WRONLY | O_NONBLOCK);
     if (g_fd_read_w == -1) {
         if (errno == ENXIO) {
