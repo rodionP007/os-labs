@@ -1,4 +1,4 @@
-// lab2_1_virtual_memory.cpp
+
 
 
 #define NOMINMAX
@@ -67,7 +67,6 @@ static void header(const std::string& title) {
     std::cout << "========================================\n\n";
 }
 
-// -------------------- helpers: input --------------------
 static std::string readLine(const std::string& prompt) {
     std::cout << prompt;
     std::string s;
@@ -111,7 +110,6 @@ static bool parseSize(const std::string& s, SIZE_T& out) {
 }
 
 static bool parsePtr(const std::string& s, void*& out) {
-    // принимает: 0x..., либо просто hex/dec
     std::string t;
     for (char c : s) if (!std::isspace((unsigned char)c)) t.push_back(c);
     if (t.empty()) return false;
@@ -233,7 +231,7 @@ static std::string protectToStr(DWORD p) {
     return oss.str();
 }
 
-// -------------------- global state for allocated region --------------------
+// -------------------- global states --------------------
 static void*  g_base = nullptr;
 static SIZE_T g_size = 0;
 
@@ -379,7 +377,6 @@ static void menuReserveAtAddress() {
         return;
     }
 
-    // Проверим выравнивание по AllocationGranularity
     uintptr_t b = (uintptr_t)base;
     if (b % si.dwAllocationGranularity != 0) {
         std::cout << "Адрес НЕ выровнен по dwAllocationGranularity=" << si.dwAllocationGranularity << ".\n";
@@ -598,7 +595,6 @@ static void menuProtect() {
     std::cout << "OK: защита изменена.\n";
     std::cout << "OldProtect: " << protectToStr(oldp) << "\n";
 
-    // Проверка: просто выводим, что VirtualQuery теперь показывает новую защиту
     printVirtualQuery(base);
 
 
