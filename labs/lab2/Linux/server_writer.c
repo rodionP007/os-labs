@@ -76,7 +76,7 @@ static int wait_readable_select(int fd, int seconds) {
 static void menu_map(void) {
     header("Сервер: выполнить проецирование (создать файл + mmap + FIFO)");
 
-    // очистим старые артефакты (если остались)
+    // очистим 
     unlink(FILENAME);
     unlink(FIFO_READY);
     unlink(FIFO_READ);
@@ -91,14 +91,10 @@ static void menu_map(void) {
 
     if (ftruncate(g_fd_file, FILESIZE) != 0) { perr("ftruncate"); pauseEnter(); return; }
 
-    // mmap
     g_ptr = mmap(NULL, FILESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, g_fd_file, 0);
     if (g_ptr == MAP_FAILED) { g_ptr = NULL; perr("mmap"); pauseEnter(); return; }
     memset(g_ptr, 0, FILESIZE);
 
-    // Открываем FIFO:
-    // - READY: мы будем писать, но open(O_WRONLY) блокирует пока клиент не откроет на чтение.
-    //   Чтобы сервер не зависал, откроем в O_WRONLY|O_NONBLOCK, а если нет читателя — скажем запустить клиента.
     g_fd_ready_w = open(FIFO_READY, O_WRONLY | O_NONBLOCK);
     if (g_fd_ready_w == -1) {
         if (errno == ENXIO) {
@@ -107,10 +103,9 @@ static void menu_map(void) {
         } else {
             perr("open FIFO_READY (write)");
         }
-        // не выходим: mmap уже есть; можно позже переоткрыть FIFO при записи
+        
     }
 
-    // - READ: мы будем читать подтверждение; open(O_RDONLY|O_NONBLOCK) не блокирует
     g_fd_read_r = open(FIFO_READ, O_RDONLY | O_NONBLOCK);
     if (g_fd_read_r == -1) { perr("open FIFO_READ (read)"); pauseEnter(); return; }
 
@@ -170,7 +165,6 @@ static void menu_write(void) {
 
     printf("\nДанные записаны. Жду подтверждения чтения от клиента (select на FIFO_READ)...\n");
 
-    // Ждём readable на FIFO_READ
     int wr = wait_readable_select(g_fd_read_r, 60);
     if (wr < 0) { perr("select"); pauseEnter(); return; }
     if (wr == 0) {
